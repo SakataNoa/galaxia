@@ -46,7 +46,7 @@
       "dependencies": {}
     },
     "com.unity.ide.rider": {
-      "version": "3.0.37",
+      "version": "3.0.38",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -203,6 +203,13 @@
         "com.unity.modules.jsonserialize": "1.0.0"
       },
       "url": "https://packages.unity.com"
+    },
+    "jp.co.cyberagent.reso-dynamix": {
+      "version": "https://github.com/CyberAgentGameEntertainment/ResoDynamix.git?path=/Assets/ResoDynamix",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "de14ba679d0929e77475f50cd2235b7c4e347ae2"
     },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
