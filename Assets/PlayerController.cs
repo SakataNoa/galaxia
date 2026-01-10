@@ -30,10 +30,10 @@ public class PlayerController : MonoBehaviour
     private float _currentSpeed;
 
     public bool IsBoosting => _isBoosting;
-    public float CurrentSpeed => _currentSpeed;
 
     [Header("Reticle (Aiming)")]
-    public GameObject _reticle;
+    public GameObject _reticlePrefab; // インスペクターでプレハブを指定
+    [HideInInspector] public GameObject _reticleInstance; // 実際に動かす実体
     public float _reticleDistance = 30f;
     public float _reticleSmoothTime = 20f;
 
@@ -43,20 +43,17 @@ public class PlayerController : MonoBehaviour
         if (barrelDeflect != null) barrelDeflect.SetActive(false);
         _currentSpeed = _moveSpeed;
 
-        // 開始時にレティクルの親子関係を解除（自機と一緒に回転しないようにするため）
-        if (_reticle != null)
+        // レティクルの生成処理
+        if (_reticlePrefab != null)
         {
-            _reticle.transform.parent = null;
+            // プレハブからインスタンスを生成
+            _reticleInstance = Instantiate(_reticlePrefab);
+            // 親子関係をなしにする（エラー回避 ＋ 自由な動きのため）
+            _reticleInstance.transform.parent = null;
         }
     }
 
-    public void OnMove(InputValue value)
-    {
-        Vector2 input = value.Get<Vector2>();
-        _horiInput = input.x;
-        _verInput = input.y;
-    }
-
+    public void OnMove(InputValue value) { Vector2 input = value.Get<Vector2>(); _horiInput = input.x; _verInput = input.y; }
     public void OnLean(InputValue value)
     {
         float input = value.Get<float>();
@@ -65,22 +62,17 @@ public class PlayerController : MonoBehaviour
 
         if (input < -0.1f)
         {
-            if (Time.time - _lastLeftTapTime < _timeBetTaps)
-                StartCoroutine(BarrelRoll(1));
+            if (Time.time - _lastLeftTapTime < _timeBetTaps) StartCoroutine(BarrelRoll(1));
             _lastLeftTapTime = Time.time;
         }
         else if (input > 0.1f)
         {
-            if (Time.time - _lastRightTapTime < _timeBetTaps)
-                StartCoroutine(BarrelRoll(-1));
+            if (Time.time - _lastRightTapTime < _timeBetTaps) StartCoroutine(BarrelRoll(-1));
             _lastRightTapTime = Time.time;
         }
     }
 
-    public void OnBoost(InputValue value)
-    {
-        _isBoosting = value.isPressed;
-    }
+    public void OnBoost(InputValue value) { _isBoosting = value.isPressed; }
 
     void Update()
     {
@@ -89,17 +81,11 @@ public class PlayerController : MonoBehaviour
 
         HandleReticle();
 
-        if (!isRolling)
-        {
-            HandleRotation();
-        }
+        if (!isRolling) HandleRotation();
         ClampToScreen();
     }
 
-    private void FixedUpdate()
-    {
-        Movement();
-    }
+    private void FixedUpdate() { Movement(); }
 
     void Movement()
     {
@@ -110,20 +96,14 @@ public class PlayerController : MonoBehaviour
 
     void HandleReticle()
     {
-        if (_reticle == null) return;
+        if (_reticleInstance == null) return;
 
-        // 目標位置：自機のワールド前方
         Vector3 targetReticlePos = transform.position + (transform.forward * _reticleDistance);
+        _reticleInstance.transform.position = Vector3.Lerp(_reticleInstance.transform.position, targetReticlePos, Time.deltaTime * _reticleSmoothTime);
+        _reticleInstance.transform.LookAt(Camera.main.transform);
+        _reticleInstance.transform.Rotate(0, 180, 0);
 
-        // 滑らかに追従
-        _reticle.transform.position = Vector3.Lerp(_reticle.transform.position, targetReticlePos, Time.deltaTime * _reticleSmoothTime);
-
-        // カメラの方を向かせる
-        _reticle.transform.LookAt(Camera.main.transform);
-        _reticle.transform.Rotate(0, 180, 0);
-
-        // デバッグ用：Sceneビューで自機からレティクルへの線を描画
-        Debug.DrawLine(transform.position, _reticle.transform.position, Color.red);
+        Debug.DrawLine(transform.position, _reticleInstance.transform.position, Color.red);
     }
 
     void HandleRotation()
@@ -132,8 +112,7 @@ public class PlayerController : MonoBehaviour
         float targetX = Mathf.LerpAngle(currentRot.x, -_verInput * _tilt, _tiltSpeed);
         float targetY = Mathf.LerpAngle(currentRot.y, _horiInput * _tilt, _tiltSpeed);
         float targetZ = (_leanInput != 0) ? -_leanInput * 95f : -_horiInput * _tilt;
-        float currentLeanSpeed = (_leanInput != 0) ? 0.2f : _leanSpeed;
-        float lerpedZ = Mathf.LerpAngle(currentRot.z, targetZ, currentLeanSpeed);
+        float lerpedZ = Mathf.LerpAngle(currentRot.z, targetZ, _leanSpeed);
         transform.localEulerAngles = new Vector3(targetX, targetY, lerpedZ);
     }
 
