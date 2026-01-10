@@ -1,19 +1,55 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
     [Header("Movement Settings")]
-    public float _moveSpeed;
-    public float _tilt;
+    public float _moveSpeed = 15f;
+    public float _tilt = 30f;
     public float _tiltSpeed = 0.1f;
-    public float _leanSpeed = 0.01f; // リーン（Q/E）の戻る速さ
+    public float _leanSpeed = 0.05f;
 
     private float _horiInput;
     private float _verInput;
-    private float _leanInput; // Q/Eの入力を保持（-1, 0, 1）
+    private float _leanInput;
 
-    // 移動入力（WASD / スティック）
+    [Header("Barrel Roll Settings")]
+    [SerializeField] float _timeBetTaps = 0.25f;
+    [SerializeField] float _rollDuration = 0.5f;
+    public bool isRolling = false;
+    public GameObject barrelDeflect;
+
+    private float _lastLeftTapTime;
+    private float _lastRightTapTime;
+
+    [Header("Boost Settings")]
+    public float _boostSpeed = 30f;
+    public float _speedSmoothTime = 8f;
+    private bool _isBoosting = false;
+    private float _currentSpeed;
+
+    public bool IsBoosting => _isBoosting;
+    public float CurrentSpeed => _currentSpeed;
+
+    [Header("Reticle (Aiming)")]
+    public GameObject _reticle;
+    public float _reticleDistance = 30f;
+    public float _reticleSmoothTime = 20f;
+
+    private void Start()
+    {
+        isRolling = false;
+        if (barrelDeflect != null) barrelDeflect.SetActive(false);
+        _currentSpeed = _moveSpeed;
+
+        // 開始時にレティクルの親子関係を解除（自機と一緒に回転しないようにするため）
+        if (_reticle != null)
+        {
+            _reticle.transform.parent = null;
+        }
+    }
+
     public void OnMove(InputValue value)
     {
         Vector2 input = value.Get<Vector2>();
@@ -21,16 +57,42 @@ public class PlayerController : MonoBehaviour
         _verInput = input.y;
     }
 
-    // リーン入力（Q/E）
-    // Input Actionで "Lean" という名前の1D Axis（Q:-1, E:1）を設定してください
     public void OnLean(InputValue value)
     {
-        _leanInput = value.Get<float>();
+        float input = value.Get<float>();
+        _leanInput = input;
+        if (isRolling || Mathf.Abs(input) < 0.1f) return;
+
+        if (input < -0.1f)
+        {
+            if (Time.time - _lastLeftTapTime < _timeBetTaps)
+                StartCoroutine(BarrelRoll(1));
+            _lastLeftTapTime = Time.time;
+        }
+        else if (input > 0.1f)
+        {
+            if (Time.time - _lastRightTapTime < _timeBetTaps)
+                StartCoroutine(BarrelRoll(-1));
+            _lastRightTapTime = Time.time;
+        }
+    }
+
+    public void OnBoost(InputValue value)
+    {
+        _isBoosting = value.isPressed;
     }
 
     void Update()
     {
-        HandleRotation();
+        float targetSpeed = _isBoosting ? _boostSpeed : _moveSpeed;
+        _currentSpeed = Mathf.Lerp(_currentSpeed, targetSpeed, Time.deltaTime * _speedSmoothTime);
+
+        HandleReticle();
+
+        if (!isRolling)
+        {
+            HandleRotation();
+        }
         ClampToScreen();
     }
 
@@ -41,44 +103,59 @@ public class PlayerController : MonoBehaviour
 
     void Movement()
     {
-        // 前進
-        transform.Translate(Vector3.forward * _moveSpeed * Time.fixedDeltaTime);
-
-        // 上下左右移動
+        transform.Translate(Vector3.forward * _currentSpeed * Time.fixedDeltaTime, Space.World);
         Vector3 movement = new Vector3(_horiInput, _verInput, 0);
         transform.localPosition += movement * _moveSpeed * Time.fixedDeltaTime;
+    }
+
+    void HandleReticle()
+    {
+        if (_reticle == null) return;
+
+        // 目標位置：自機のワールド前方
+        Vector3 targetReticlePos = transform.position + (transform.forward * _reticleDistance);
+
+        // 滑らかに追従
+        _reticle.transform.position = Vector3.Lerp(_reticle.transform.position, targetReticlePos, Time.deltaTime * _reticleSmoothTime);
+
+        // カメラの方を向かせる
+        _reticle.transform.LookAt(Camera.main.transform);
+        _reticle.transform.Rotate(0, 180, 0);
+
+        // デバッグ用：Sceneビューで自機からレティクルへの線を描画
+        Debug.DrawLine(transform.position, _reticle.transform.position, Color.red);
     }
 
     void HandleRotation()
     {
         Vector3 currentRot = transform.localEulerAngles;
-
-        // 1. 上下移動によるX軸の傾き（これは常に適用）
         float targetX = Mathf.LerpAngle(currentRot.x, -_verInput * _tilt, _tiltSpeed);
-
-        // 2. 左右の回転（Y軸）
         float targetY = Mathf.LerpAngle(currentRot.y, _horiInput * _tilt, _tiltSpeed);
-
-        // 3. Z軸（ロール）の計算
-        float targetZ = 0;
-        float currentLeanSpeed = _tiltSpeed; // 基本の速さ
-
-        if (_leanInput != 0)
-        {
-            // Q/Eが押されている時は、移動の傾きを無視して指定角度(95度)へ
-            targetZ = -_leanInput * 95f;
-            currentLeanSpeed = 0.2f; // Q/E時は少し素早く傾くように設定（お好みで）
-        }
-        else
-        {
-            // Q/Eが離されている時は、左右移動に合わせて少し傾ける
-            targetZ = -_horiInput * _tilt;
-            currentLeanSpeed = _leanSpeed; // 戻る時の速さ
-        }
-
-        // 最終的な角度を適用
+        float targetZ = (_leanInput != 0) ? -_leanInput * 95f : -_horiInput * _tilt;
+        float currentLeanSpeed = (_leanInput != 0) ? 0.2f : _leanSpeed;
         float lerpedZ = Mathf.LerpAngle(currentRot.z, targetZ, currentLeanSpeed);
         transform.localEulerAngles = new Vector3(targetX, targetY, lerpedZ);
+    }
+
+    IEnumerator BarrelRoll(int direction)
+    {
+        isRolling = true;
+        if (barrelDeflect != null) barrelDeflect.SetActive(true);
+        float elapsed = 0f;
+        float startZ = transform.localEulerAngles.z;
+        while (elapsed < _rollDuration)
+        {
+            elapsed += Time.deltaTime;
+            float percent = elapsed / _rollDuration;
+            float curve = Mathf.SmoothStep(0, 1, percent);
+            float zRotation = startZ + (direction * 360f * curve);
+            float currentX = Mathf.LerpAngle(transform.localEulerAngles.x, -_verInput * _tilt, _tiltSpeed);
+            float currentY = Mathf.LerpAngle(transform.localEulerAngles.y, _horiInput * _tilt, _tiltSpeed);
+            transform.localRotation = Quaternion.Euler(currentX, currentY, zRotation);
+            yield return null;
+        }
+        if (barrelDeflect != null) barrelDeflect.SetActive(false);
+        isRolling = false;
     }
 
     void ClampToScreen()
