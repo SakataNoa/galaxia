@@ -119,67 +119,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1001 &64225894
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 756102479516321521, guid: eddf7974b85faea4da909cdd433eb8e1, type: 3}
-      propertyPath: m_Name
-      value: Laser
-      objectReference: {fileID: 0}
-    - target: {fileID: 756102479516321521, guid: eddf7974b85faea4da909cdd433eb8e1, type: 3}
-      propertyPath: m_TagString
-      value: PlayerBullet
-      objectReference: {fileID: 0}
-    - target: {fileID: 6763160355699802652, guid: eddf7974b85faea4da909cdd433eb8e1, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 4.05007
-      objectReference: {fileID: 0}
-    - target: {fileID: 6763160355699802652, guid: eddf7974b85faea4da909cdd433eb8e1, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 2.50812
-      objectReference: {fileID: 0}
-    - target: {fileID: 6763160355699802652, guid: eddf7974b85faea4da909cdd433eb8e1, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 55.36119
-      objectReference: {fileID: 0}
-    - target: {fileID: 6763160355699802652, guid: eddf7974b85faea4da909cdd433eb8e1, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 6763160355699802652, guid: eddf7974b85faea4da909cdd433eb8e1, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 6763160355699802652, guid: eddf7974b85faea4da909cdd433eb8e1, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6763160355699802652, guid: eddf7974b85faea4da909cdd433eb8e1, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6763160355699802652, guid: eddf7974b85faea4da909cdd433eb8e1, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 90
-      objectReference: {fileID: 0}
-    - target: {fileID: 6763160355699802652, guid: eddf7974b85faea4da909cdd433eb8e1, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6763160355699802652, guid: eddf7974b85faea4da909cdd433eb8e1, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: eddf7974b85faea4da909cdd433eb8e1, type: 3}
 --- !u!1 &95576563
 GameObject:
   m_ObjectHideFlags: 0
@@ -192,7 +131,6 @@ GameObject:
   - component: {fileID: 95576568}
   - component: {fileID: 95576567}
   - component: {fileID: 95576566}
-  - component: {fileID: 95576565}
   m_Layer: 0
   m_Name: RightBarrel
   m_TagString: Untagged
@@ -215,25 +153,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1141896701}
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
---- !u!114 &95576565
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 95576563}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0df1a1e53a791414ea8cc4450f4fc2a3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerShooting
-  _laserPrefab: {fileID: 756102479516321521, guid: eddf7974b85faea4da909cdd433eb8e1, type: 3}
-  _barrelLaserPrefab: {fileID: 756102479516321521, guid: d5c8a3fbdc2478b4aaa5fb28ee2dddef, type: 3}
-  _muzzles:
-  - {fileID: 95576564}
-  _laserSpeed: 100
-  _fireRate: 0.2
-  _barrelFireRate: 0.05
 --- !u!136 &95576566
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -357,7 +276,7 @@ GameObject:
   - component: {fileID: 165832857}
   - component: {fileID: 165832856}
   m_Layer: 0
-  m_Name: Cube
+  m_Name: RightWing
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -807,6 +726,7 @@ GameObject:
   - component: {fileID: 1141896703}
   - component: {fileID: 1141896702}
   - component: {fileID: 1141896706}
+  - component: {fileID: 1141896707}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -1042,6 +962,27 @@ MonoBehaviour:
   m_DefaultActionMap: Player
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 330585545}
+--- !u!114 &1141896707
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1141896700}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0df1a1e53a791414ea8cc4450f4fc2a3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerShooting
+  _laserPrefab: {fileID: 756102479516321521, guid: eddf7974b85faea4da909cdd433eb8e1, type: 3}
+  _barrelLaserPrefab: {fileID: 756102479516321521, guid: d5c8a3fbdc2478b4aaa5fb28ee2dddef, type: 3}
+  _muzzles:
+  - {fileID: 95576564}
+  - {fileID: 1176200076}
+  _laserSpeed: 150
+  _fireRate: 0.15
+  _barrelFireRate: 0.05
+  _spawnOffset: 1
 --- !u!1 &1176200075
 GameObject:
   m_ObjectHideFlags: 0
@@ -1054,7 +995,6 @@ GameObject:
   - component: {fileID: 1176200080}
   - component: {fileID: 1176200079}
   - component: {fileID: 1176200078}
-  - component: {fileID: 1176200077}
   m_Layer: 0
   m_Name: LeftBarrel
   m_TagString: Untagged
@@ -1077,25 +1017,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1141896701}
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
---- !u!114 &1176200077
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1176200075}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0df1a1e53a791414ea8cc4450f4fc2a3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerShooting
-  _laserPrefab: {fileID: 756102479516321521, guid: eddf7974b85faea4da909cdd433eb8e1, type: 3}
-  _barrelLaserPrefab: {fileID: 756102479516321521, guid: d5c8a3fbdc2478b4aaa5fb28ee2dddef, type: 3}
-  _muzzles:
-  - {fileID: 1176200076}
-  _laserSpeed: 100
-  _fireRate: 0.2
-  _barrelFireRate: 0.05
 --- !u!136 &1176200078
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1188,7 +1109,7 @@ GameObject:
   - component: {fileID: 1441082924}
   - component: {fileID: 1441082923}
   m_Layer: 0
-  m_Name: Cube (1)
+  m_Name: LeftWing
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1327,4 +1248,3 @@ SceneRoots:
   - {fileID: 832575519}
   - {fileID: 111542932}
   - {fileID: 1827887634}
-  - {fileID: 64225894}
