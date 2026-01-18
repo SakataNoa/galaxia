@@ -772,6 +772,11 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!1 &596601390 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7552494250860606926, guid: 6af6f4a8ce072b6419961b346f4be816, type: 3}
+  m_PrefabInstance: {fileID: 5415023179700000271}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &597594480
 GameObject:
   m_ObjectHideFlags: 0
@@ -974,7 +979,7 @@ GameObject:
   - component: {fileID: 1141896707}
   m_Layer: 0
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1571,6 +1576,22 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7337438958651168064, guid: 6af6f4a8ce072b6419961b346f4be816, type: 3}
   m_PrefabInstance: {fileID: 5415023179700000271}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1925795252
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 596601390}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3836da075280fe14b8dfd433b05c488b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyShooting
+  _bulletPrefab: {fileID: 6472328902714981826, guid: f8be6ed152cdcc9488c31b63cb1f8475, type: 3}
+  _fireRate: 2
+  _bulletSpeed: 40
+  _shootingDistance: 100
 --- !u!1 &1968616462
 GameObject:
   m_ObjectHideFlags: 0
@@ -1728,7 +1749,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7552494250860606926, guid: 6af6f4a8ce072b6419961b346f4be816, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1925795252}
   m_SourcePrefab: {fileID: 100100000, guid: 6af6f4a8ce072b6419961b346f4be816, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
