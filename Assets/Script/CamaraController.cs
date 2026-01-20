@@ -1,9 +1,12 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class CamaraController : MonoBehaviour
 {
     [SerializeField] Transform _PlayerTrget;
     private PlayerController _playerScript;
+    private Vector3 _originalPos;
 
     [Header("Follow Settings")]
     public float smoothSpeed = 10.0f;
@@ -70,5 +73,31 @@ public class CamaraController : MonoBehaviour
 
         // 5. 反映
         transform.position = new Vector3(finalX, finalY, finalZ);
+    }
+    // ダメージ時に PlayerHealth から呼び出す関数
+    public void TriggerShake(float duration, float magnitude)
+    {
+        StartCoroutine(Shake(duration, magnitude));
+    }
+
+    private IEnumerator Shake(float duration, float magnitude)
+    {
+        _originalPos = transform.localPosition;
+        float elapsed = 0.0f;
+
+        while (elapsed < duration)
+        {
+            // ランダムな方向にずらす
+            float x = Random.Range(-1f, 1f) * magnitude;
+            float y = Random.Range(-1f, 1f) * magnitude;
+
+            transform.localPosition = new Vector3(_originalPos.x + x, _originalPos.y + y, _originalPos.z);
+
+            elapsed += Time.deltaTime;
+            yield return null; // 1フレーム待機
+        }
+
+        // 揺れが終わったら元の位置に戻す
+        transform.localPosition = _originalPos;
     }
 }

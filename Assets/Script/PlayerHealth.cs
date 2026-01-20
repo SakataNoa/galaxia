@@ -3,9 +3,17 @@ using UnityEngine.UI;
 
 public class PlayerHealth : MonoBehaviour
 {
+    [Header("UI References")]
+    public Slider _healthSlider;
+    public Image _damageFlashImage;
+
+    [Header("Camera Reference")]
+    public CamaraController _cameraController; // ここにメインカメラのCameraControllerをセット
+
     [Header("Settings")]
     public float _maxHealth = 100f;
-    public Slider _healthSlider;
+    public float _flashSpeed = 5f;
+    public Color _flashColor = new Color(1f, 0f, 0f, 0.4f);
 
     private float _currentHealth;
 
@@ -16,34 +24,45 @@ public class PlayerHealth : MonoBehaviour
         if (_healthSlider != null)
         {
             _healthSlider.maxValue = _maxHealth;
-            _healthSlider.minValue = 0f;
             _healthSlider.value = _maxHealth;
         }
-        else
+
+        // 自動でCameraControllerを探す（もしセットし忘れても大丈夫なように）
+        if (_cameraController == null)
         {
-            Debug.LogError("Health Sliderがアサインされていません！");
+            _cameraController = Camera.main.GetComponent<CamaraController>();
+        }
+    }
+
+    void Update()
+    {
+        if (_damageFlashImage != null && _damageFlashImage.color.a > 0)
+        {
+            _damageFlashImage.color = Color.Lerp(_damageFlashImage.color, Color.clear, _flashSpeed * Time.deltaTime);
         }
     }
 
     public void TakeDamage(float amount)
     {
         _currentHealth -= amount;
-        Debug.Log("ダメージを受けました！ 残りHP: " + _currentHealth);
 
-        if (_healthSlider != null)
+        // 1. 画面フラッシュ
+        if (_damageFlashImage != null) _damageFlashImage.color = _flashColor;
+
+        // 2. カメラシェイク（0.2秒間、強さ0.3で揺らす）
+        if (_cameraController != null)
         {
-            _healthSlider.value = _currentHealth;
+            _cameraController.TriggerShake(0.2f, 0.3f);
         }
 
-        if (_currentHealth <= 0)
-        {
-            Die();
-        }
+        if (_healthSlider != null) _healthSlider.value = _currentHealth;
+
+        if (_currentHealth <= 0) Die();
     }
 
     void Die()
     {
-        Debug.Log("プレイヤーが破壊されました");
-        // ゲームオーバー処理
+        Debug.Log("Game Over");
+        Time.timeScale = 0;
     }
 }
