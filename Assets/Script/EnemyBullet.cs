@@ -4,13 +4,17 @@ public class EnemyBullet : MonoBehaviour
 {
     private Vector3 _direction;
     private float _speed;
-    public float _damage = 10f; // 弾の威力
+
+    [Header("Settings")]
+    public int _damage = 10;
+    public float _lifeTime = 5f;
 
     public void Setup(Vector3 dir, float speed)
     {
-        _direction = dir;
+        _direction = dir.normalized;
         _speed = speed;
-        Destroy(gameObject, 5f);
+        if (_direction != Vector3.zero) transform.forward = _direction;
+        Destroy(gameObject, _lifeTime);
     }
 
     void Update()
@@ -18,19 +22,4 @@ public class EnemyBullet : MonoBehaviour
         transform.position += _direction * _speed * Time.deltaTime;
     }
 
-    private void OnTriggerEnter(Collider other)
-    {
-        // プレイヤーに当たった場合
-        if (other.CompareTag("Player"))
-        {
-            // PlayerHealthコンポーネントを取得してダメージを与える
-            PlayerHealth health = other.GetComponent<PlayerHealth>();
-            if (health != null)
-            {
-                health.TakeDamage(_damage);
-            }
-
-            Destroy(gameObject);
-        }
-    }
 }

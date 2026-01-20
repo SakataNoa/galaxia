@@ -7,30 +7,26 @@ public class PlayerShooting : MonoBehaviour
     [Header("Prefabs")]
     public GameObject _laserPrefab;
     public GameObject _homingLaserPrefab;
-    public GameObject _lockOnUIPrefab; // ロックオンUIのプレハブ
+    public GameObject _lockOnUIPrefab;
 
     [Header("Settings")]
     public float _laserSpeed = 80f;
     public float _fireRate = 0.15f;
-    public float _barrelFireRate = 0.2f;
-    public float _lockOnRadius = 3f;
-    public int _maxLockOnCount = 5;
+    public int _maxLockOnCount = 10;
 
     [Header("Setup")]
     public Transform[] _muzzles;
-    public Canvas _uiCanvas; // UIを表示するキャンバス
-
-    // ロック中の敵と、そのUIのペアを管理
-    private Dictionary<Transform, GameObject> _lockedTargetsUI = new Dictionary<Transform, GameObject>();
+    public Canvas _uiCanvas;
 
     private float _nextFireTime;
-    private float _nextBarrelFireTime;
     private PlayerController _playerController;
+    private PlayerHealth _playerHealth;
     private Camera _mainCam;
 
     private void Start()
     {
         _playerController = GetComponent<PlayerController>();
+        _playerHealth = GetComponent<PlayerHealth>();
         _mainCam = Camera.main;
 
         if (_uiCanvas == null) _uiCanvas = FindFirstObjectByType<Canvas>();
@@ -38,130 +34,83 @@ public class PlayerShooting : MonoBehaviour
 
     void Update()
     {
-        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame) OnAttackDetected();
-
-        if (_playerController != null && _playerController.isRolling)
+        // 通常射撃
+        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
         {
-            SearchNewTargets();
-            ValidateTargets();
-
-            if (Time.time > _nextBarrelFireTime && _lockedTargetsUI.Count > 0)
+            if (_playerController != null && !_playerController.isRolling)
             {
-                FireHomingAndRelease();
-                _nextBarrelFireTime = Time.time + _barrelFireRate;
+                ManualShoot();
             }
-        }
-        else
-        {
-            ClearAllLockOn();
         }
     }
 
-    void SearchNewTargets()
+    /// <summary>
+    /// バレルロール開始時にPlayerControllerから呼ばれる
+    /// </summary>
+    public void OnBarrelRollStart()
     {
-        if (_playerController._reticleInstance == null) return;
+        if (_playerHealth == null) return;
 
-        Vector3 startPoint = transform.position;
-        Vector3 endPoint = _playerController._reticleInstance.transform.position;
-
-        Collider[] colliders = Physics.OverlapCapsule(startPoint, endPoint, _lockOnRadius);
-
-        foreach (var col in colliders)
+        // 【条件追加】ストックが最大まで溜まっているかチェック
+        if (_playerHealth._currentLaserStock >= _playerHealth._maxLaserStock)
         {
-            if (col.CompareTag("Enemy"))
-            {
-                Transform enemy = col.transform;
+            Debug.Log("フルチャージ！ホーミングレーザー発射！");
+            LockAndFireHoming();
+        }
+        else
+        {
+            Debug.Log("エネルギー不足: " + _playerHealth._currentLaserStock + "/" + _playerHealth._maxLaserStock);
+        }
+    }
 
-                // まだロックしていなければUIを生成して登録
-                if (!_lockedTargetsUI.ContainsKey(enemy) && _lockedTargetsUI.Count < _maxLockOnCount)
+    void LockAndFireHoming()
+    {
+        // 画面内の敵をすべて取得
+        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        List<Transform> validTargets = new List<Transform>();
+
+        foreach (var enemyObj in enemies)
+        {
+            Transform enemy = enemyObj.transform;
+
+            if (IsPointVisible(enemy.position))
+            {
+                validTargets.Add(enemy);
+            }
+
+            // 最大ロック数に達したら終了
+            if (validTargets.Count >= _maxLockOnCount) break;
+        }
+
+        // ターゲットがいれば、溜まったゲージ分すべてを消費して発射
+        if (validTargets.Count > 0)
+        {
+            // ターゲットを順番に割り当てて発射（敵よりゲージが多い場合はループで複数回当てる）
+            int shotsToFire = _playerHealth._currentLaserStock;
+            for (int i = 0; i < shotsToFire; i++)
+            {
+                Transform target = validTargets[i % validTargets.Count];
+
+                if (_playerHealth.TryUseLaser())
                 {
-                    CreateLockOnUI(enemy);
+                    ExecuteHomingShoot(target);
                 }
             }
         }
     }
 
-    void CreateLockOnUI(Transform target)
+    void ExecuteHomingShoot(Transform target)
     {
-        if (_lockOnUIPrefab == null || _uiCanvas == null) return;
+        if (_homingLaserPrefab == null || target == null) return;
 
-        GameObject uiInstance = Instantiate(_lockOnUIPrefab, _uiCanvas.transform);
-        LockOnUI lockUI = uiInstance.GetComponent<LockOnUI>();
-        if (lockUI != null) lockUI.Setup(target);
+        Transform muzzle = _muzzles[Random.Range(0, _muzzles.Length)];
+        GameObject laser = Instantiate(_homingLaserPrefab, muzzle.position, muzzle.rotation);
 
-        _lockedTargetsUI.Add(target, uiInstance);
-        Debug.Log("ロックオンUI表示: " + target.name);
-    }
-
-    void ValidateTargets()
-    {
-        Plane[] planes = GeometryUtility.CalculateFrustumPlanes(_mainCam);
-        List<Transform> keysToRemove = new List<Transform>();
-
-        foreach (var pair in _lockedTargetsUI)
+        HomingLaser homing = laser.GetComponent<HomingLaser>();
+        if (homing != null)
         {
-            Transform target = pair.Key;
-            if (target == null) { keysToRemove.Add(target); continue; }
-
-            Collider targetCol = target.GetComponent<Collider>();
-            bool isVisible = (targetCol != null) ? GeometryUtility.TestPlanesAABB(planes, targetCol.bounds) : IsPointVisible(target.position);
-
-            if (!isVisible) keysToRemove.Add(target);
+            homing.SetTarget(target);
         }
-
-        foreach (var key in keysToRemove)
-        {
-            RemoveLockOn(key);
-        }
-    }
-
-    void RemoveLockOn(Transform target)
-    {
-        if (_lockedTargetsUI.ContainsKey(target))
-        {
-            if (_lockedTargetsUI[target] != null) Destroy(_lockedTargetsUI[target]);
-            _lockedTargetsUI.Remove(target);
-        }
-    }
-
-    void ClearAllLockOn()
-    {
-        foreach (var ui in _lockedTargetsUI.Values) if (ui != null) Destroy(ui);
-        _lockedTargetsUI.Clear();
-    }
-
-    bool IsPointVisible(Vector3 point)
-    {
-        Vector3 viewportPoint = _mainCam.WorldToViewportPoint(point);
-        return viewportPoint.z > 0 && viewportPoint.x > 0 && viewportPoint.x < 1 && viewportPoint.y > 0 && viewportPoint.y < 1;
-    }
-
-    void FireHomingAndRelease()
-    {
-        List<Transform> keys = new List<Transform>(_lockedTargetsUI.Keys);
-
-        for (int i = keys.Count - 1; i >= 0; i--)
-        {
-            Transform target = keys[i];
-            if (target == null) continue;
-
-            Transform muzzle = _muzzles[i % _muzzles.Length];
-
-            if (_homingLaserPrefab != null)
-            {
-                GameObject laser = Instantiate(_homingLaserPrefab, muzzle.position, muzzle.rotation);
-                HomingLaser homing = laser.GetComponent<HomingLaser>();
-                if (homing != null) homing.Initialize(target, _laserSpeed);
-
-                // 発射したらUIを消してリストから除外
-                RemoveLockOn(target);
-            }
-        }
-    }
-
-    private void OnAttackDetected()
-    {
-        if (_playerController != null && !_playerController.isRolling) ManualShoot();
     }
 
     void ManualShoot()
@@ -179,26 +128,20 @@ public class PlayerShooting : MonoBehaviour
         GameObject reticle = _playerController._reticleInstance;
         foreach (var muzzle in _muzzles)
         {
-            Vector3 spawnPos = muzzle.position + (transform.forward * 1.0f);
+            Vector3 spawnPos = muzzle.position;
             GameObject laser = Instantiate(prefab, spawnPos, transform.rotation);
             Vector3 dir = (reticle != null) ? (reticle.transform.position - spawnPos).normalized : transform.forward;
-            laser.transform.forward = dir;
+
             Rigidbody rb = laser.GetComponent<Rigidbody>();
             if (rb != null) rb.linearVelocity = dir * _laserSpeed;
+
             Destroy(laser, 2f);
         }
     }
 
-    private void OnDrawGizmos()
+    bool IsPointVisible(Vector3 point)
     {
-        if (_playerController != null && _playerController._reticleInstance != null)
-        {
-            Gizmos.color = Color.yellow;
-            Vector3 start = transform.position;
-            Vector3 end = _playerController._reticleInstance.transform.position;
-            Gizmos.DrawLine(start, end);
-            Gizmos.DrawWireSphere(start, _lockOnRadius);
-            Gizmos.DrawWireSphere(end, _lockOnRadius);
-        }
+        Vector3 viewportPoint = _mainCam.WorldToViewportPoint(point);
+        return viewportPoint.z > 0 && viewportPoint.x > 0 && viewportPoint.x < 1 && viewportPoint.y > 0 && viewportPoint.y < 1;
     }
 }

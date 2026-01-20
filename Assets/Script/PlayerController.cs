@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+[RequireComponent(typeof(Rigidbody))]
 public class PlayerController : MonoBehaviour
 {
     [Header("Movement Settings")]
@@ -26,34 +27,38 @@ public class PlayerController : MonoBehaviour
     [Header("Boost Settings")]
     public float _boostSpeed = 30f;
     public float _speedSmoothTime = 8f;
-    private bool _isBoosting = false;
+    public bool _isBoosting = false; // publicに変更してCameraControllerから見えるようにしました
     private float _currentSpeed;
 
-    public bool IsBoosting => _isBoosting;
-
     [Header("Reticle (Aiming)")]
-    public GameObject _reticlePrefab; // インスペクターでプレハブを指定
-    [HideInInspector] public GameObject _reticleInstance; // 実際に動かす実体
+    public GameObject _reticlePrefab;
+    [HideInInspector] public GameObject _reticleInstance;
     public float _reticleDistance = 30f;
     public float _reticleSmoothTime = 20f;
 
+    private Rigidbody _rb;
+    private PlayerShooting _playerShooting;
+
     private void Start()
     {
+        _rb = GetComponent(typeof(Rigidbody)) as Rigidbody;
+        _rb.useGravity = false;
+        _rb.isKinematic = true;
+
+        _playerShooting = GetComponent<PlayerShooting>();
+
         isRolling = false;
         if (barrelDeflect != null) barrelDeflect.SetActive(false);
         _currentSpeed = _moveSpeed;
 
-        // レティクルの生成処理
         if (_reticlePrefab != null)
         {
-            // プレハブからインスタンスを生成
             _reticleInstance = Instantiate(_reticlePrefab);
-            // 親子関係をなしにする（エラー回避 ＋ 自由な動きのため）
-            _reticleInstance.transform.parent = null;
         }
     }
 
     public void OnMove(InputValue value) { Vector2 input = value.Get<Vector2>(); _horiInput = input.x; _verInput = input.y; }
+
     public void OnLean(InputValue value)
     {
         float input = value.Get<float>();
@@ -85,7 +90,10 @@ public class PlayerController : MonoBehaviour
         ClampToScreen();
     }
 
-    private void FixedUpdate() { Movement(); }
+    private void FixedUpdate()
+    {
+        Movement();
+    }
 
     void Movement()
     {
@@ -102,8 +110,6 @@ public class PlayerController : MonoBehaviour
         _reticleInstance.transform.position = Vector3.Lerp(_reticleInstance.transform.position, targetReticlePos, Time.deltaTime * _reticleSmoothTime);
         _reticleInstance.transform.LookAt(Camera.main.transform);
         _reticleInstance.transform.Rotate(0, 180, 0);
-
-        Debug.DrawLine(transform.position, _reticleInstance.transform.position, Color.red);
     }
 
     void HandleRotation()
@@ -119,6 +125,11 @@ public class PlayerController : MonoBehaviour
     IEnumerator BarrelRoll(int direction)
     {
         isRolling = true;
+        if (_playerShooting != null) _playerShooting.OnBarrelRollStart();
+
+        PlayerHealth health = GetComponent<PlayerHealth>();
+        if (health != null) health._isRolling = true;
+
         if (barrelDeflect != null) barrelDeflect.SetActive(true);
         float elapsed = 0f;
         float startZ = transform.localEulerAngles.z;
@@ -134,6 +145,7 @@ public class PlayerController : MonoBehaviour
             yield return null;
         }
         if (barrelDeflect != null) barrelDeflect.SetActive(false);
+        if (health != null) health._isRolling = false;
         isRolling = false;
     }
 
