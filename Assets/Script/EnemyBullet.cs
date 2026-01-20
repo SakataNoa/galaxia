@@ -4,12 +4,12 @@ public class EnemyBullet : MonoBehaviour
 {
     private Vector3 _direction;
     private float _speed;
+    public float _damage = 10f; // 弾の威力
 
     public void Setup(Vector3 dir, float speed)
     {
         _direction = dir;
         _speed = speed;
-        // 5秒後に自動消滅
         Destroy(gameObject, 5f);
     }
 
@@ -20,11 +20,16 @@ public class EnemyBullet : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        // プレイヤーに当たったか判定
+        // プレイヤーに当たった場合
         if (other.CompareTag("Player"))
         {
-            Debug.Log("プレイヤーが被弾！");
-            // ここにプレイヤーのダメージ処理を追加する
+            // PlayerHealthコンポーネントを取得してダメージを与える
+            PlayerHealth health = other.GetComponent<PlayerHealth>();
+            if (health != null)
+            {
+                health.TakeDamage(_damage);
+            }
+
             Destroy(gameObject);
         }
     }
